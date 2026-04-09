@@ -4,5 +4,7 @@ id,prix,etat
 103,450,occupe
 104,450,libre
 105,500,libre
-201,600,occupe
-202,600,libre
+106,600,occupe
+107,600,libre
+108,700,libre
+109,800,libre
