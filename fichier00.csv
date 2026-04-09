@@ -1,0 +1,5 @@
+id;prix;etat;photo
+101;350;libre;https://mon-site.com/chambre1.jpg
+102;350;occupe;https://mon-site.com/chambre2.jpg
+201;500;libre;https://mon-site.com/suite.jpg
+202;450;libre;
