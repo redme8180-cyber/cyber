@@ -1,123 +1,134 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LocPro Pirate</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4285F4">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; overflow: hidden; background: #1a1a1a; }
-        #map { height: 100%; width: 100%; }
-        .controls {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; background: rgba(0,0,0,0.8);
-            padding: 12px; border-radius: 50px; z-index: 2000; width: 90%; justify-content: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .btn {
-            width: 45px; height: 45px; border-radius: 50%; border: 2px solid white;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; cursor: pointer; color: white; transition: 0.2s;
-        }
-        .btn:active { transform: scale(0.8); }
-        .btn-save { background: #28a745; }
-        .btn-photo { background: #6f42c1; }
-        .btn-wa { background: #25D366; }
-        .btn-pdf { background: #dc3545; }
-        .btn-reset { background: #ffc107; color: black; }
-        .btn-center { background: #4285F4; }
-        #photo-input { display: none; }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <div class="controls">
-        <button class="btn btn-center" onclick="recenter()">📍</button>
-        <button class="btn btn-save" onclick="savePosition()">💾</button>
-        <label class="btn btn-photo">📷<input type="file" id="photo-input" accept="image/*" capture="environment"></label>
-        <button class="btn btn-wa" onclick="sendWA()">💬</button>
-        <button class="btn btn-pdf" onclick="generatePDF()">📄</button>
-        <button class="btn btn-reset" onclick="resetApp()">♻️</button>
+<!DOCTYPE html> 
+<html lang="fr"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Hôtel Pro - Réservation</title> 
+    <style> 
+        :root { --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --primary: #10b981; --danger: #ef4444; --accent: #3b82f6; } 
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 15px; max-width: 500px; margin: auto; } 
+        .hotel-header { text-align: center; margin-bottom: 20px; }
+        #logo-header { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; } 
+        .room-rect { background: var(--card); height: 90px; border-radius: 12px; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; transition: transform 0.2s; } 
+        .room-busy { opacity: 0.6; cursor: not-allowed; background: #f1f5f9; }
+        .triangle { position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 25px 25px 0; border-radius: 0 10px 0 0; } 
+        .tri-free { border-color: transparent var(--primary) transparent transparent; } 
+        .tri-busy { border-color: transparent var(--danger) transparent transparent; } 
+        #res-form-container { display: none; background: var(--card); padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid var(--accent); margin-top: 20px; } 
+        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #e2e8f0; box-sizing: border-box; } 
+        .btn-res { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .price-summary { background: #e0f2fe; padding: 10px; border-radius: 10px; margin: 10px 0; text-align: center; font-weight: bold; color: #0369a1; }
+    </style> 
+</head> 
+<body> 
+
+    <div class="hotel-header">
+        <img id="logo-header" src="https://via.placeholder.com/70" alt="Logo">
+        <h2 id="hotel-name">Mon Hôtel</h2>
+        <div id="source-badge" style="font-size: 9px; color: gray;">Connexion...</div>
     </div>
+ 
+    <div id="room-grid" class="grid-container">
+        <p style="text-align:center; width:100%;">Chargement des chambres...</p>
+    </div> 
+ 
+    <div id="res-form-container"> 
+        <h3 id="res-title" style="margin:0; color:var(--accent);">Chambre</h3> 
+        <label style="font-size:11px;">Arrivée</label><input type="date" id="date-arrivee" onchange="calculerTotal()">
+        <label style="font-size:11px;">Départ</label><input type="date" id="date-depart" onchange="calculerTotal()">
+        <div id="prix-total" class="price-summary">Sélectionnez vos dates</div>
+        <input type="text" id="client-name" placeholder="Votre Nom"> 
+        <input type="tel" id="client-tel" placeholder="WhatsApp"> 
+        <button class="btn-res" onclick="validerReservation()">RESERVER VIA WHATSAPP</button> 
+        <button onclick="document.getElementById('res-form-container').style.display='none'" style="background:none; border:none; color:gray; font-size:12px; cursor:pointer;">Annuler</button>
+    </div> 
 
-    <script>
-        let map, marker, accuracyCircle;
-        let isFollowing = true;
-        let savedPoints = JSON.parse(localStorage.getItem('points')) || [];
-        let mapMarkers = [];
+    <script> 
+        // --- CONFIGURATION ---
+        const WHATSAPP_NUM = "212661731123"; 
+        const GOOGLE_CSV_URL = "TON_LIEN_GOOGLE_SHEETS_CSV"; // Source 1 (Priorité)
+        const GITHUB_CSV_URL = "TON_LIEN_GITHUB_RAW_CSV";   // Source 2 (Sécurité)
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 17, center: { lat: 48.8566, lng: 2.3522 }, disableDefaultUI: true
-            });
-            map.addListener("dragstart", () => isFollowing = false);
-            displaySavedPoints();
-            startTracking();
+        let chambres = []; 
+        let selectedRoom = null;
+
+        async function chargerDonnees() { 
+            try { 
+                // Tentative 1 : Google Sheets
+                const response = await fetch(GOOGLE_CSV_URL); 
+                if (!response.ok) throw new Error();
+                const data = await response.text(); 
+                document.getElementById('source-badge').innerText = "SOURCE: GOOGLE SHEETS (LIVE)";
+                traiterDonnees(data);
+            } catch (e) { 
+                // Tentative 2 : GitHub (si Google échoue)
+                try {
+                    const response = await fetch(GITHUB_CSV_URL);
+                    const data = await response.text();
+                    document.getElementById('source-badge').innerText = "SOURCE: GITHUB (SÉCURITÉ)";
+                    traiterDonnees(data);
+                } catch (err) {
+                    document.getElementById('room-grid').innerHTML = "Erreur de connexion.";
+                }
+            } 
+        } 
+
+        function traiterDonnees(csv) {
+            const lignes = csv.split('\n').slice(1); 
+            chambres = lignes.filter(l => l.trim() !== "").map(l => { 
+                const c = l.split(','); 
+                return { id: c[0].trim(), prix: parseFloat(c[1]), etat: c[2].trim().toLowerCase() }; 
+            }); 
+            render(); 
         }
 
-        function displaySavedPoints() {
-            savedPoints.forEach(p => addRedMarker(p.lat, p.lng, p.time));
+        function render() { 
+            const grid = document.getElementById('room-grid'); 
+            grid.innerHTML = ""; 
+            chambres.forEach(c => { 
+                const isOccupied = c.etat === 'occupe' || c.etat === 'occupé'; 
+                const box = document.createElement('div'); 
+                box.className = `room-rect ${isOccupied ? 'room-busy' : ''}`; 
+                if(!isOccupied) box.onclick = () => ouvrirForm(c); 
+                box.innerHTML = `<div class="triangle ${isOccupied ? 'tri-busy' : 'tri-free'}"></div><strong>#${c.id}</strong><span>${c.prix} DH</span>`; 
+                grid.appendChild(box); 
+            }); 
+        } 
+
+        function ouvrirForm(room) {
+            selectedRoom = room;
+            document.getElementById('res-form-container').style.display = 'block';
+            document.getElementById('res-title').innerText = "Chambre #" + room.id;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-arrivee').value = today;
+            document.getElementById('date-arrivee').min = today;
+            document.getElementById('date-depart').min = today;
         }
 
-        function addRedMarker(lat, lng, time) {
-            const m = new google.maps.Marker({
-                position: { lat, lng }, map: map,
-                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 6, fillColor: "#FF0000", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }
-            });
-            mapMarkers.push(m);
-        }
-
-        function startTracking() {
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition((pos) => {
-                    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    if (!marker) {
-                        marker = new google.maps.Marker({ position: coords, map: map, icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#4285F4", fillOpacity: 1, strokeColor: "white", strokeWeight: 2 }});
-                    } else { marker.setPosition(coords); }
-                    if (isFollowing) map.panTo(coords);
-                }, null, { enableHighAccuracy: true });
+        function calculerTotal() {
+            const d1 = new Date(document.getElementById('date-arrivee').value);
+            const d2 = new Date(document.getElementById('date-depart').value);
+            if (d1 && d2 && d2 > d1) {
+                const diffDays = Math.ceil(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)); 
+                const total = diffDays * selectedRoom.prix;
+                document.getElementById('prix-total').innerText = `${diffDays} nuits = ${total} DH`;
+                return { days: diffDays, total: total };
             }
+            document.getElementById('prix-total').innerText = "Dates invalides";
+            return null;
         }
 
-        function savePosition() {
-            if (!marker) return;
-            const pos = marker.getPosition();
-            const time = new Date().toLocaleTimeString();
-            const newP = { lat: pos.lat(), lng: pos.lng(), time: time };
-            savedPoints.push(newP);
-            localStorage.setItem('points', JSON.stringify(savedPoints));
-            addRedMarker(newP.lat, newP.lng, newP.time);
-        }
+        function validerReservation() { 
+            const info = calculerTotal();
+            const nom = document.getElementById('client-name').value;
+            if(!nom || !info) return alert("Remplissez tous les champs");
+            const msg = `*Réservation Chambre #${selectedRoom.id}*\n👤 Nom: ${nom}\n📅 Durée: ${info.days} nuits\n💰 Total: ${info.total} DH`;
+            window.open(`https://wa.me/${WHATSAPP_NUM}?text=${encodeURIComponent(msg)}`); 
+        } 
 
-        function sendWA() {
-            if (!marker) return;
-            const p = marker.getPosition();
-            window.open(`https://wa.me/?text=Ma%20Position:%20https://maps.google.com/?q=${p.lat()},${p.lng()}`);
-        }
-
-        function generatePDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Rapport LocPro - Pirate Edition", 10, 10);
-            savedPoints.forEach((p, i) => doc.text(`${i+1}. ${p.time} -> Lat: ${p.lat.toFixed(5)} Lng: ${p.lng.toFixed(5)}`, 10, 20+(i*10)));
-            doc.save("rapport.pdf");
-        }
-
-        function resetApp() {
-            if (confirm("Reset total ?")) {
-                mapMarkers.forEach(m => m.setMap(null));
-                localStorage.clear();
-                savedPoints = [];
-                location.reload();
-            }
-        }
-
-        function recenter() { isFollowing = true; if(marker) map.panTo(marker.getPosition()); }
-
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=SANS_CLE&callback=initMap" async defer></script>
-</body>
+        chargerDonnees(); 
+        setInterval(chargerDonnees, 60000); // Rafraîchit toutes les minutes
+    </script> 
+</body> 
 </html>
